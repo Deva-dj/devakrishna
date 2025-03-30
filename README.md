@@ -1,1 +1,9 @@
-# devakrishna
+- Credit-Card-Fraud-Detection/
+  - data/
+    - creditcard.csv              # Your dataset
+  - src/
+    - preprocessing.py            # Data preprocessing code (scaling, balancing)
+    - model.py                    # Model training and prediction code
+    - evaluation.py               # Code for evaluating the model
+  - requirements.txt              # List of dependencies
+  - README.md                     # Task objectives, setup instructions, etc.
