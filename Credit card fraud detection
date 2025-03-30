@@ -8,3 +8,332 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+
+
+df_train = pd.read_csv('/kaggle/input/fraud-detection/fraudTrain.csv')
+df_train.head(3)
+
+
+	Unnamed: 0	trans_date_trans_time	cc_num	merchant	category	amt	first	last	gender	street	...	lat	long	city_pop	job	dob	trans_num	unix_time	merch_lat	merch_long	is_fraud
+0	0	2019-01-01 00:00:18	2703186189652095	fraud_Rippin, Kub and Mann	misc_net	4.97	Jennifer	Banks	F	561 Perry Cove	...	36.0788	-81.1781	3495	Psychologist, counselling	1988-03-09	0b242abb623afc578575680df30655b9	1325376018	36.011293	-82.048315	0
+1	1	2019-01-01 00:00:44	630423337322	fraud_Heller, Gutmann and Zieme	grocery_pos	107.23	Stephanie	Gill	F	43039 Riley Greens Suite 393	...	48.8878	-118.2105	149	Special educational needs teacher	1978-06-21	1f76529f8574734946361c461b024d99	1325376044	49.159047	-118.186462	0
+2	2	2019-01-01 00:00:51	38859492057661	fraud_Lind-Buckridge	entertainment	220.11	Edward	Sanchez	M	594 White Dale Suite 530	...	42.1808	-112.2620	4154	Nature conservation officer	1962-01-19	a1a22d70485983eac12b5b88dad1cf95	1325376051	43.150704	-112.154481	0
+
+
+df_test = pd.read_csv('/kaggle/input/fraud-detection/fraudTest.csv')
+df_test.head(3)
+
+
+	Unnamed: 0	trans_date_trans_time	cc_num	merchant	category	amt	first	last	gender	street	...	lat	long	city_pop	job	dob	trans_num	unix_time	merch_lat	merch_long	is_fraud
+0	0	2020-06-21 12:14:25	2291163933867244	fraud_Kirlin and Sons	personal_care	2.86	Jeff	Elliott	M	351 Darlene Green	...	33.9659	-80.9355	333497	Mechanical engineer	1968-03-19	2da90c7d74bd46a0caf3777415b3ebd3	1371816865	33.986391	-81.200714	0
+1	1	2020-06-21 12:14:33	3573030041201292	fraud_Sporer-Keebler	personal_care	29.84	Joanne	Williams	F	3638 Marsh Union	...	40.3207	-110.4360	302	Sales professional, IT	1990-01-17	324cc204407e99f51b0d6ca0055005e7	1371816873	39.450498	-109.960431	0
+2	2	2020-06-21 12:14:53	3598215285024754	fraud_Swaniawski, Nitzsche and Welch	health_fitness	41.28	Ashley	Lopez	F	9333 Valentine Point	...	40.6729	-73.5365	34496	Librarian, public	1970-10-21	c81755dbbbea9d5c77f094348a7579be	1371816893	40.495810	-74.196111	0
+3 rows × 23 columns
+
+Data Preprocessing
+# Size of both dataframes
+print(f"The shape of train set: {df_train.shape}")
+print(f"Test shape of test set: {df_test.shape}")
+The shape of train set: (1296675, 23)
+Test shape of test set: (555719, 23)
+df_train.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1296675 entries, 0 to 1296674
+Data columns (total 23 columns):
+ #   Column                 Non-Null Count    Dtype  
+---  ------                 --------------    -----  
+ 0   Unnamed: 0             1296675 non-null  int64  
+ 1   trans_date_trans_time  1296675 non-null  object 
+ 2   cc_num                 1296675 non-null  int64  
+ 3   merchant               1296675 non-null  object 
+ 4   category               1296675 non-null  object 
+ 5   amt                    1296675 non-null  float64
+ 6   first                  1296675 non-null  object 
+ 7   last                   1296675 non-null  object 
+ 8   gender                 1296675 non-null  object 
+ 9   street                 1296675 non-null  object 
+ 10  city                   1296675 non-null  object 
+ 11  state                  1296675 non-null  object 
+ 12  zip                    1296675 non-null  int64  
+ 13  lat                    1296675 non-null  float64
+ 14  long                   1296675 non-null  float64
+ 15  city_pop               1296675 non-null  int64  
+ 16  job                    1296675 non-null  object 
+ 17  dob                    1296675 non-null  object 
+ 18  trans_num              1296675 non-null  object 
+ 19  unix_time              1296675 non-null  int64  
+ 20  merch_lat              1296675 non-null  float64
+ 21  merch_long             1296675 non-null  float64
+ 22  is_fraud               1296675 non-null  int64  
+dtypes: float64(5), int64(6), object(12)
+memory usage: 227.5+ MB
+# Number of null values in each column
+df_train.isnull().sum()
+Unnamed: 0               0
+trans_date_trans_time    0
+cc_num                   0
+merchant                 0
+category                 0
+amt                      0
+first                    0
+last                     0
+gender                   0
+street                   0
+city                     0
+state                    0
+zip                      0
+lat                      0
+long                     0
+city_pop                 0
+job                      0
+dob                      0
+trans_num                0
+unix_time                0
+merch_lat                0
+merch_long               0
+is_fraud                 0
+dtype: int64
+df_test.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 555719 entries, 0 to 555718
+Data columns (total 23 columns):
+ #   Column                 Non-Null Count   Dtype  
+---  ------                 --------------   -----  
+ 0   Unnamed: 0             555719 non-null  int64  
+ 1   trans_date_trans_time  555719 non-null  object 
+ 2   cc_num                 555719 non-null  int64  
+ 3   merchant               555719 non-null  object 
+ 4   category               555719 non-null  object 
+ 5   amt                    555719 non-null  float64
+ 6   first                  555719 non-null  object 
+ 7   last                   555719 non-null  object 
+ 8   gender                 555719 non-null  object 
+ 9   street                 555719 non-null  object 
+ 10  city                   555719 non-null  object 
+ 11  state                  555719 non-null  object 
+ 12  zip                    555719 non-null  int64  
+ 13  lat                    555719 non-null  float64
+ 14  long                   555719 non-null  float64
+ 15  city_pop               555719 non-null  int64  
+ 16  job                    555719 non-null  object 
+ 17  dob                    555719 non-null  object 
+ 18  trans_num              555719 non-null  object 
+ 19  unix_time              555719 non-null  int64  
+ 20  merch_lat              555719 non-null  float64
+ 21  merch_long             555719 non-null  float64
+ 22  is_fraud               555719 non-null  int64  
+dtypes: float64(5), int64(6), object(12)
+memory usage: 97.5+ MB
+# Number of null values in each column
+df_test.isnull().sum()
+Unnamed: 0               0
+trans_date_trans_time    0
+cc_num                   0
+merchant                 0
+category                 0
+amt                      0
+first                    0
+last                     0
+gender                   0
+street                   0
+city                     0
+state                    0
+zip                      0
+lat                      0
+long                     0
+city_pop                 0
+job                      0
+dob                      0
+trans_num                0
+unix_time                0
+merch_lat                0
+merch_long               0
+is_fraud                 0
+dtype: int64
+Cleaning/Encoding
+# Function to remove non-important columns
+def clean_data(clean):
+     clean.drop(["Unnamed: 0",'cc_num','first', 'last', 'street', 'city', 'state', 'zip', 'dob', 'trans_num','trans_date_trans_time'],axis=1, inplace=True)
+     clean.dropna()
+     return clean
+# Function called on training data
+clean_data(df_train)
+merchant	category	amt	gender	lat	long	city_pop	job	unix_time	merch_lat	merch_long	is_fraud
+0	fraud_Rippin, Kub and Mann	misc_net	4.97	F	36.0788	-81.1781	3495	Psychologist, counselling	1325376018	36.011293	-82.048315	0
+1	fraud_Heller, Gutmann and Zieme	grocery_pos	107.23	F	48.8878	-118.2105	149	Special educational needs teacher	1325376044	49.159047	-118.186462	0
+2	fraud_Lind-Buckridge	entertainment	220.11	M	42.1808	-112.2620	4154	Nature conservation officer	1325376051	43.150704	-112.154481	0
+3	fraud_Kutch, Hermiston and Farrell	gas_transport	45.00	M	46.2306	-112.1138	1939	Patent attorney	1325376076	47.034331	-112.561071	0
+4	fraud_Keeling-Crist	misc_pos	41.96	M	38.4207	-79.4629	99	Dance movement psychotherapist	1325376186	38.674999	-78.632459	0
+...	...	...	...	...	...	...	...	...	...	...	...	...
+1296670	fraud_Reichel Inc	entertainment	15.56	M	37.7175	-112.4777	258	Geoscientist	1371816728	36.841266	-111.690765	0
+1296671	fraud_Abernathy and Sons	food_dining	51.70	M	39.2667	-77.5101	100	Production assistant, television	1371816739	38.906881	-78.246528	0
+1296672	fraud_Stiedemann Ltd	food_dining	105.93	M	32.9396	-105.8189	899	Naval architect	1371816752	33.619513	-105.130529	0
+1296673	fraud_Reinger, Weissnat and Strosin	food_dining	74.90	M	43.3526	-102.5411	1126	Volunteer coordinator	1371816816	42.788940	-103.241160	0
+1296674	fraud_Langosh, Wintheiser and Hyatt	food_dining	4.30	M	45.8433	-113.8748	218	Therapist, horticultural	1371816817	46.565983	-114.186110	0
+1296675 rows × 12 columns
+
+# Function called on test data
+clean_data(df_test)
+merchant	category	amt	gender	lat	long	city_pop	job	unix_time	merch_lat	merch_long	is_fraud
+0	fraud_Kirlin and Sons	personal_care	2.86	M	33.9659	-80.9355	333497	Mechanical engineer	1371816865	33.986391	-81.200714	0
+1	fraud_Sporer-Keebler	personal_care	29.84	F	40.3207	-110.4360	302	Sales professional, IT	1371816873	39.450498	-109.960431	0
+2	fraud_Swaniawski, Nitzsche and Welch	health_fitness	41.28	F	40.6729	-73.5365	34496	Librarian, public	1371816893	40.495810	-74.196111	0
+3	fraud_Haley Group	misc_pos	60.05	M	28.5697	-80.8191	54767	Set designer	1371816915	28.812398	-80.883061	0
+4	fraud_Johnston-Casper	travel	3.19	M	44.2529	-85.0170	1126	Furniture designer	1371816917	44.959148	-85.884734	0
+...	...	...	...	...	...	...	...	...	...	...	...	...
+555714	fraud_Reilly and Sons	health_fitness	43.77	M	40.4931	-91.8912	519	Town planner	1388534347	39.946837	-91.333331	0
+555715	fraud_Hoppe-Parisian	kids_pets	111.84	M	29.0393	-95.4401	28739	Futures trader	1388534349	29.661049	-96.186633	0
+555716	fraud_Rau-Robel	kids_pets	86.88	F	46.1966	-118.9017	3684	Musician	1388534355	46.658340	-119.715054	0
+555717	fraud_Breitenberg LLC	travel	7.99	M	44.6255	-116.4493	129	Cartographer	1388534364	44.470525	-117.080888	0
+555718	fraud_Dare-Marvin	entertainment	38.13	M	35.6665	-97.4798	116001	Media buyer	1388534374	36.210097	-97.036372	0
+555719 rows × 12 columns
+
+# Columns with categorical values
+df_train.select_dtypes(include = ['object'])
+merchant	category	gender	job
+0	fraud_Rippin, Kub and Mann	misc_net	F	Psychologist, counselling
+1	fraud_Heller, Gutmann and Zieme	grocery_pos	F	Special educational needs teacher
+2	fraud_Lind-Buckridge	entertainment	M	Nature conservation officer
+3	fraud_Kutch, Hermiston and Farrell	gas_transport	M	Patent attorney
+4	fraud_Keeling-Crist	misc_pos	M	Dance movement psychotherapist
+...	...	...	...	...
+1296670	fraud_Reichel Inc	entertainment	M	Geoscientist
+1296671	fraud_Abernathy and Sons	food_dining	M	Production assistant, television
+1296672	fraud_Stiedemann Ltd	food_dining	M	Naval architect
+1296673	fraud_Reinger, Weissnat and Strosin	food_dining	M	Volunteer coordinator
+1296674	fraud_Langosh, Wintheiser and Hyatt	food_dining	M	Therapist, horticultural
+1296675 rows × 4 columns
+
+# Encoding to convert categorical data into numerical data
+encoder=LabelEncoder()
+def encode(data):
+    data['merchant']=encoder.fit_transform(data['merchant'])
+    data["category"] = encoder.fit_transform(data["category"])
+    data["gender"] = encoder.fit_transform(data["gender"])
+    data["job"] = encoder.fit_transform(data["job"])
+    return data
+# Function called on training data
+encode(df_train)
+merchant	category	amt	gender	lat	long	city_pop	job	unix_time	merch_lat	merch_long	is_fraud
+0	514	8	4.97	0	36.0788	-81.1781	3495	370	1325376018	36.011293	-82.048315	0
+1	241	4	107.23	0	48.8878	-118.2105	149	428	1325376044	49.159047	-118.186462	0
+2	390	0	220.11	1	42.1808	-112.2620	4154	307	1325376051	43.150704	-112.154481	0
+3	360	2	45.00	1	46.2306	-112.1138	1939	328	1325376076	47.034331	-112.561071	0
+4	297	9	41.96	1	38.4207	-79.4629	99	116	1325376186	38.674999	-78.632459	0
+...	...	...	...	...	...	...	...	...	...	...	...	...
+1296670	499	0	15.56	1	37.7175	-112.4777	258	215	1371816728	36.841266	-111.690765	0
+1296671	2	1	51.70	1	39.2667	-77.5101	100	360	1371816739	38.906881	-78.246528	0
+1296672	599	1	105.93	1	32.9396	-105.8189	899	308	1371816752	33.619513	-105.130529	0
+1296673	509	1	74.90	1	43.3526	-102.5411	1126	485	1371816816	42.788940	-103.241160	0
+1296674	370	1	4.30	1	45.8433	-113.8748	218	467	1371816817	46.565983	-114.186110	0
+1296675 rows × 12 columns
+
+# Function called on training data
+encode(df_test)
+merchant	category	amt	gender	lat	long	city_pop	job	unix_time	merch_lat	merch_long	is_fraud
+0	319	10	2.86	1	33.9659	-80.9355	333497	275	1371816865	33.986391	-81.200714	0
+1	591	10	29.84	0	40.3207	-110.4360	302	392	1371816873	39.450498	-109.960431	0
+2	611	5	41.28	0	40.6729	-73.5365	34496	259	1371816893	40.495810	-74.196111	0
+3	222	9	60.05	1	28.5697	-80.8191	54767	407	1371816915	28.812398	-80.883061	0
+4	292	13	3.19	1	44.2529	-85.0170	1126	196	1371816917	44.959148	-85.884734	0
+...	...	...	...	...	...	...	...	...	...	...	...	...
+555714	507	5	43.77	1	40.4931	-91.8912	519	460	1388534347	39.946837	-91.333331	0
+555715	264	7	111.84	1	29.0393	-95.4401	28739	198	1388534349	29.661049	-96.186633	0
+555716	496	7	86.88	0	46.1966	-118.9017	3684	294	1388534355	46.658340	-119.715054	0
+555717	75	13	7.99	1	44.6255	-116.4493	129	58	1388534364	44.470525	-117.080888	0
+555718	125	0	38.13	1	35.6665	-97.4798	116001	276	1388534374	36.210097	-97.036372	0
+555719 rows × 12 columns
+
+Visualise Data
+from matplotlib import pyplot as plt
+exit_counts = df_train["is_fraud"].value_counts()
+plt.figure(figsize=(7, 7))
+plt.subplot(1, 2, 1)  # Subplot for the pie chart
+plt.pie(exit_counts, labels=["No", "YES"], autopct="%0.0f%%")
+plt.title("is_fraud Counts")
+plt.tight_layout()  # Adjust layout to prevent overlapping
+plt.show()
+
+import seaborn as sns
+pd.options.display.float_format = "{:,.2f}".format
+
+corr_matrix = df_train.corr(method = 'pearson')
+
+mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
+corr_matrix[(corr_matrix < 0.3) & (corr_matrix > -0.3)] = 0
+
+cmap = "mako"
+
+# the heatmap
+sns.heatmap(corr_matrix, mask=mask, vmax=1.0, vmin=-1.0, linewidths=0.1,
+            annot_kws={"size": 9, "color": "black"}, square=True, cmap=cmap, annot=True)
+<Axes: >
+
+Split Data and Train Model
+x=df_train.drop(columns=['is_fraud'])
+y=df_train['is_fraud']
+x_train,x_test,y_train,y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+model1 = LogisticRegression()
+model2 = RandomForestClassifier()
+model3 = DecisionTreeClassifier()
+from sklearn.metrics import accuracy_score
+
+# Define a function for each metric
+def acc_score(test, pred):
+    acc_ = accuracy_score(test, pred)
+    return acc_
+
+# Print the scores
+def print_score(test, pred, model):
+
+    print(f"Classifier: {model}")
+    print(f"ACCURACY: {accuracy_score(test, pred)}")
+Logistic Regression
+model1.fit(x_train,y_train)
+
+LogisticRegression
+LogisticRegression()
+y_pred = model1.predict(x_test)
+print_score(y_test, y_pred, "Logistic Regression")
+Classifier: Logistic Regression
+ACCURACY: 0.9941388551487458
+model_list = []
+acc_list = []
+
+model_list.append(model1.__class__.__name__)
+acc_list.append(round(acc_score(y_test, y_pred), 4))
+Random Forests
+model2.fit(x_train,y_train)
+
+RandomForestClassifier
+RandomForestClassifier()
+y_pred1 = model2.predict(x_test)
+print_score(y_test,y_pred1,"Random Forest")
+Classifier: Random Forest
+ACCURACY: 0.9974550292093238
+
+model_list.append(model2.__class__.__name__)
+acc_list.append(round(acc_score(y_test, y_pred), 4))
+Decision Trees
+model3.fit(x_train,y_train)
+
+DecisionTreeClassifier
+DecisionTreeClassifier()
+
+Y_Pred = model3.predict(x_test)
+print_score(y_test, Y_Pred, "Decision Tree")
+Classifier: Decision Tree
+ACCURACY: 0.9959203347022192
+model_list.append(model3.__class__.__name__)
+acc_list.append(round(acc_score(y_test, Y_Pred), 3))
+
+Comparison and Results
+
+model_results = pd.DataFrame({"Model": model_list,
+                              "Accuracy_Score": acc_list,
+                              })
+model_results
+Model	Accuracy_Score
+0	LogisticRegression	0.99
+1	RandomForestClassifier	0.99
+2	DecisionTreeClassifier	1.00
